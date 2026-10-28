@@ -1046,6 +1046,15 @@ fn run_app(
 
     let boot = BackgroundCapture::Pending;
 
+    let boot = match wait_for_vo_window(boot) {
+        Ok(boot) => boot,
+        Err(error) => {
+            let code = error.exit_code();
+            tracing::info!(target: "Main", "{error}");
+            return code;
+        }
+    };
+    
     // Platform init precedes both the shell overlay and `CefInitialize`: the
     // overlay's surface needs the backend's compositor devices, and the
     // connect screen must be on screen while CEF is still starting.
@@ -1096,14 +1105,6 @@ fn run_app(
         }
     } else {
         Some(runtime)
-    };
-    let boot = match wait_for_vo_window(boot) {
-        Ok(boot) => boot,
-        Err(error) => {
-            let code = error.exit_code();
-            tracing::info!(target: "Main", "{error}");
-            return code;
-        }
     };
     if let Some(readiness) = shell_readiness {
         match readiness.wait(platform, std::time::Duration::from_secs(5)) {
